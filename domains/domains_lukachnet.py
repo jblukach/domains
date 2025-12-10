@@ -2,9 +2,14 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
     Stack,
+    aws_certificatemanager as _acm,
+    aws_cloudfront as _cloudfront,
+    aws_cloudfront_origins as _origins,
     aws_iam as _iam,
     aws_logs as _logs,
     aws_route53 as _route53,
+    aws_route53_targets as _targets,
+    aws_s3 as _s3,
     aws_ssm as _ssm
 )
 
@@ -18,7 +23,7 @@ class DomainsLukachNet(Stack):
         account = Stack.of(self).account
         region = Stack.of(self).region
 
-    ### ROUTE53 ###
+    ### HOSTZONE ###
 
         policy_statement = _iam.PolicyStatement(
             principals = [
@@ -65,7 +70,7 @@ class DomainsLukachNet(Stack):
             tier = _ssm.ParameterTier.STANDARD
         )
 
-    ### DNS RECORDS ###
+    ### MAIL RECORDS ###
 
         mx = _route53.MxRecord(
             self, 'mx',
@@ -106,4 +111,101 @@ class DomainsLukachNet(Stack):
             record_name = '_dmarc',
             values = ['v=DMARC1; p=reject; rua=mailto:hello@lukach.net; ruf=mailto:hello@lukach.net;'],
             ttl = Duration.minutes(300)
+        )
+
+    ### ACM CERTIFICATE ###
+
+        acm = _acm.Certificate(
+            self, 'acm',
+            domain_name = 'lukach.net',
+            subject_alternative_names = [
+                'www.lukach.net'
+            ],
+            validation = _acm.CertificateValidation.from_dns(hostzone)
+        )
+
+    ### S3 BUCKET ###
+
+        bucket = _s3.Bucket(
+            self, 'bucket',
+            encryption = _s3.BucketEncryption.S3_MANAGED,
+            block_public_access = _s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy = RemovalPolicy.DESTROY,
+            auto_delete_objects = True,
+            enforce_ssl = True,
+            versioned = False
+        )
+
+    ### CLOUDFRONT FUNCTIONS ###
+
+        function = _cloudfront.Function(
+            self, 'function',
+            code = _cloudfront.FunctionCode.from_file(
+                file_path = 'redirect/redirect.js'
+            ),
+            runtime = _cloudfront.FunctionRuntime.JS_2_0
+        )
+
+    ### CLOUDFRONT DISTRIBUTIONS ###
+
+        distribution = _cloudfront.Distribution(
+            self, 'distribution',
+            comment = 'lukach.net',
+            default_behavior = _cloudfront.BehaviorOptions(
+                origin = _origins.S3BucketOrigin.with_origin_access_control(bucket),
+                viewer_protocol_policy = _cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                cache_policy = _cloudfront.CachePolicy.CACHING_DISABLED,
+                function_associations = [
+                    _cloudfront.FunctionAssociation(
+                        function = function,
+                        event_type = _cloudfront.FunctionEventType.VIEWER_REQUEST
+                    )   
+                ]
+            ),
+            domain_names = [
+                'lukach.net',
+                'www.lukach.net'
+            ],
+            error_responses = [
+                _cloudfront.ErrorResponse(
+                    http_status = 404,
+                    response_http_status = 200,
+                    response_page_path = '/'
+                )
+            ],
+            minimum_protocol_version = _cloudfront.SecurityPolicyProtocol.TLS_V1_3_2025,
+            price_class = _cloudfront.PriceClass.PRICE_CLASS_ALL,
+            http_version = _cloudfront.HttpVersion.HTTP2_AND_3,
+            enable_ipv6 = True,
+            certificate = acm
+        )
+
+    ### WEBSITE RECORDS ###
+
+        alias = _route53.ARecord(
+            self, 'alias',
+            zone = hostzone,
+            record_name = 'lukach.net',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
+
+        www = _route53.ARecord(
+            self, 'www',
+            zone = hostzone,
+            record_name = 'www.lukach.net',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
+
+        aliasaaa = _route53.AaaaRecord(
+            self, 'aliasaaa',
+            zone = hostzone,
+            record_name = 'lukach.net',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
+
+        wwwaaa = _route53.AaaaRecord(
+            self, 'wwwaaa',
+            zone = hostzone,
+            record_name = 'www.lukach.net',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
         )
