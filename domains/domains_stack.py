@@ -27,7 +27,7 @@ class DomainsStack(Stack):
             assumed_by = _iam.WebIdentityPrincipal(provider.open_id_connect_provider_arn).with_conditions(
                 {
                     "StringLike": {
-                        "token.actions.githubusercontent.com:sub": "repo:jblukach/domains/*"
+                        "token.actions.githubusercontent.com:sub": "repo:jblukach/domains:*"
                     }
                 }
             )
