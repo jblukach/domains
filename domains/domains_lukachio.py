@@ -188,16 +188,11 @@ class DomainsLukachIo(Stack):
             target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
         )
 
-        blog = _route53.ARecord(
+        blog = _route53.CnameRecord(
             self, 'blog',
+            record_name = 'blog.lukach.io',
             zone = hostzone,
-            target = _route53.RecordTarget.from_ip_addresses(
-                '185.199.108.153',
-                '185.199.109.153',
-                '185.199.110.153',
-                '185.199.111.153'
-            ),
-            record_name = 'blog.lukach.io'
+            domain_name = 'jblukach.github.io'
         )
 
         www = _route53.ARecord(
@@ -212,18 +207,6 @@ class DomainsLukachIo(Stack):
             zone = hostzone,
             record_name = 'lukach.io',
             target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
-        )
-
-        blogaaa = _route53.AaaaRecord(
-            self, 'blogaaa',
-            zone = hostzone,
-            target = _route53.RecordTarget.from_ip_addresses(
-                '2606:50c0:8000::153',
-                '2606:50c0:8001::153',
-                '2606:50c0:8002::153',
-                '2606:50c0:8003::153'
-            ),
-            record_name = 'blog.lukach.io'
         )
 
         wwwaaa = _route53.AaaaRecord(
