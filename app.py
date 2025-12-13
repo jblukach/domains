@@ -3,11 +3,23 @@ import os
 
 import aws_cdk as cdk
 
+from domains.domains_4n6ircom import Domains4n6irCom
 from domains.domains_lukachio import DomainsLukachIo
 from domains.domains_lukachnet import DomainsLukachNet
 from domains.domains_stack import DomainsStack
 
 app = cdk.App()
+
+Domains4n6irCom(
+    app, 'Domains4n6irCom',
+    env = cdk.Environment(
+        account = os.getenv('CDK_DEFAULT_ACCOUNT'),
+        region = 'us-east-1'
+    ),
+    synthesizer = cdk.DefaultStackSynthesizer(
+        qualifier = 'lukach'
+    )
+)
 
 DomainsLukachIo(
     app, 'DomainsLukachIo',

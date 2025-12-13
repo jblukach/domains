@@ -1,6 +1,6 @@
 # domains
 
-This repository contains the Infrastructure-as-Code configuration for managing the **lukach.net** and **lukach.io** domains using **GitHub OpenID Connect (OIDC)** and **AWS**.
+This repository contains the Infrastructure-as-Code configuration for managing the **4n6ir.com**, **lukach.io** and **lukach.net** domains using **GitHub OpenID Connect (OIDC)** and **AWS**.
 
 It provides secure, credential-free deployments, full DNS management, CloudFront distribution, domain redirects, and long-term query logging.
 
@@ -16,7 +16,7 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
 ---
 
 ## 🌐 DNS & Domain Management (Route 53)
-- Public hosted zones for **lukach.net** and **lukach.io**.
+- Public hosted zones for **4n6ir.com**, **lukach.io** and **lukach.net**.
 - **13 months of DNS query logging** stored in CloudWatch Logs.
 - Fully managed DNS records:
   - **MX** (mail routing)
@@ -37,7 +37,7 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
 - CloudFront distribution serving content for both domains.
 - **IPv4** and **IPv6** enabled.
 - CloudFront Function for lightweight redirect logic:
-  - Redirect apex → `https://github.com/jblukach`
+  - Redirect apex → `https://github.com/jblukach` or `https://github.com/4n6ir`
   - Redirect `www` → canonical hostname
 - Caching optimized for redirects and static assets.
 
