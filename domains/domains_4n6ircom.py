@@ -121,3 +121,107 @@ class Domains4n6irCom(Stack):
             values = ['0aca00d55d'],
             ttl = Duration.minutes(300)
         )
+
+    ### ACM CERTIFICATE ###
+
+        acm = _acm.Certificate(
+            self, 'acm',
+            domain_name = '4n6ir.com',
+            subject_alternative_names = [
+                'www.4n6ir.com'
+            ],
+            validation = _acm.CertificateValidation.from_dns(hostzone)
+        )
+
+    ### S3 BUCKET ###
+
+        bucket = _s3.Bucket(
+            self, 'bucket',
+            encryption = _s3.BucketEncryption.S3_MANAGED,
+            block_public_access = _s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy = RemovalPolicy.DESTROY,
+            auto_delete_objects = True,
+            enforce_ssl = True,
+            versioned = False
+        )
+
+    ### CLOUDFRONT FUNCTIONS ###
+
+        function = _cloudfront.Function(
+            self, 'function',
+            code = _cloudfront.FunctionCode.from_file(
+                file_path = 'redirect/4n6ir.js'
+            ),
+            runtime = _cloudfront.FunctionRuntime.JS_2_0
+        )
+
+    ### CLOUDFRONT DISTRIBUTIONS ###
+
+        distribution = _cloudfront.Distribution(
+            self, 'distribution',
+            comment = '4n6ir.com',
+            default_behavior = _cloudfront.BehaviorOptions(
+                origin = _origins.S3BucketOrigin.with_origin_access_control(bucket),
+                viewer_protocol_policy = _cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                cache_policy = _cloudfront.CachePolicy.CACHING_DISABLED,
+                function_associations = [
+                    _cloudfront.FunctionAssociation(
+                        function = function,
+                        event_type = _cloudfront.FunctionEventType.VIEWER_REQUEST
+                    )   
+                ]
+            ),
+            domain_names = [
+                '4n6ir.com',
+                'www.4n6ir.com'
+            ],
+            error_responses = [
+                _cloudfront.ErrorResponse(
+                    http_status = 404,
+                    response_http_status = 200,
+                    response_page_path = '/'
+                )
+            ],
+            minimum_protocol_version = _cloudfront.SecurityPolicyProtocol.TLS_V1_3_2025,
+            price_class = _cloudfront.PriceClass.PRICE_CLASS_ALL,
+            http_version = _cloudfront.HttpVersion.HTTP2_AND_3,
+            enable_ipv6 = True,
+            certificate = acm
+        )
+
+    ### WEBSITE RECORDS ###
+
+        alias = _route53.ARecord(
+            self, 'alias',
+            zone = hostzone,
+            record_name = '4n6ir.com',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
+
+        blog = _route53.CnameRecord(
+            self, 'blog',
+            record_name = 'blog.4n6ir.com',
+            zone = hostzone,
+            domain_name = '4n6ir.github.io'
+        )
+
+        www = _route53.ARecord(
+            self, 'www',
+            zone = hostzone,
+            record_name = 'www.4n6ir.com',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
+
+        aliasaaa = _route53.AaaaRecord(
+            self, 'aliasaaa',
+            zone = hostzone,
+            record_name = '4n6ir.com',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
+
+        wwwaaa = _route53.AaaaRecord(
+            self, 'wwwaaa',
+            zone = hostzone,
+            record_name = 'www.4n6ir.com',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
