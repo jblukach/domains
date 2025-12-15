@@ -12,7 +12,7 @@ class DomainsStack(Stack):
 
         account = Stack.of(self).account
 
-    ### ODIC ###
+    ### OIDC ###
 
         provider = _iam.OpenIdConnectProvider(
             self, 'provider',
