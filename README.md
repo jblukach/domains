@@ -23,6 +23,7 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
   - **SPF** (email sender validation)
   - **DKIM** (cryptographic signing)
   - **DMARC** (domain-level email security policy)
+  - **NS** (delegated subdomains)
 
 ---
 
@@ -40,5 +41,6 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
   - Redirect apex → `https://github.com/jblukach` or `https://github.com/4n6ir`
   - Redirect `www` → canonical hostname
 - Caching optimized for redirects and static assets.
+  - `https://cdn.lukach.io`
 
 ---
