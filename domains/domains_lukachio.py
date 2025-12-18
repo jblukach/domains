@@ -60,6 +60,18 @@ class DomainsLukachIo(Stack):
             query_logs_log_group_arn = logs.log_group_arn
         )
 
+        apizone = _route53.NsRecord(
+            self, 'apizone',
+            zone = hostzone,
+            record_name = 'api.lukach.io',
+            values=[
+                'ns-1139.awsdns-14.org',
+                'ns-415.awsdns-51.com',
+                'ns-1716.awsdns-22.co.uk',
+                'ns-717.awsdns-25.net'
+            ]
+        )
+
     ### PARAMETER ###
 
         parameter = _ssm.StringParameter(
