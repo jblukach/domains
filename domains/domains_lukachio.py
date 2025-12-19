@@ -66,10 +66,10 @@ class DomainsLukachIo(Stack):
             zone = hostzone,
             record_name = 'api.lukach.io',
             values=[
-                'ns-1139.awsdns-14.org',
-                'ns-415.awsdns-51.com',
-                'ns-1716.awsdns-22.co.uk',
-                'ns-717.awsdns-25.net'
+                'ns-210.awsdns-26.com',
+                'ns-1017.awsdns-63.net',
+                'ns-1698.awsdns-20.co.uk',
+                'ns-1534.awsdns-63.org'
             ]
         )
 
