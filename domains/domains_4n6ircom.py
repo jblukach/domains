@@ -115,10 +115,32 @@ class Domains4n6irCom(Stack):
     ### DOMAIN VALIDATION ###
 
         _route53.TxtRecord(
-            self, '_github-challenge-4n6ir.blog',
+            self, '_gh-4n6ir-o.4n6ir.com',
             zone = hostzone,
-            record_name = '_github-challenge-4n6ir.blog',
-            values = ['0aca00d55d'],
+            record_name = '_gh-4n6ir-o.4n6ir.com',
+            values = [
+                '78cd1b1e99'
+            ],
+            ttl = Duration.minutes(300)
+        )
+
+        _route53.TxtRecord(
+            self, '_gh-4n6ir-o.blog.4n6ir.com',
+            zone = hostzone,
+            record_name = '_gh-4n6ir-o.blog.4n6ir.com',
+            values = [
+                '574ce20909'
+            ],
+            ttl = Duration.minutes(300)
+        )
+
+        _route53.TxtRecord(
+            self, '_gh-4n6ir-o.www.4n6ir.com',
+            zone = hostzone,
+            record_name = '_gh-4n6ir-o.www.4n6ir.com',
+            values = [
+                '01b114cf2c'
+            ],
             ttl = Duration.minutes(300)
         )
 
