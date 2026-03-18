@@ -73,6 +73,18 @@ class DomainsLukachIo(Stack):
             ]
         )
 
+        hellozone = _route53.NsRecord(
+            self, 'hellozone',
+            zone = hostzone,
+            record_name = 'hello.lukach.io',
+            values=[
+                'ns-368.awsdns-46.com',
+                'ns-1213.awsdns-23.org',
+                'ns-895.awsdns-47.net',
+                'ns-1923.awsdns-48.co.uk'
+            ]
+        )
+
     ### PARAMETER ###
 
         parameter = _ssm.StringParameter(
