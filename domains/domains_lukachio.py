@@ -73,15 +73,27 @@ class DomainsLukachIo(Stack):
             ]
         )
 
-        hellozone = _route53.NsRecord(
-            self, 'hellozone',
+        use1hellozone = _route53.NsRecord(
+            self, 'use1hellozone',
             zone = hostzone,
-            record_name = 'hello.lukach.io',
+            record_name = 'use1.hello.lukach.io',
             values=[
-                'ns-368.awsdns-46.com',
-                'ns-1213.awsdns-23.org',
-                'ns-895.awsdns-47.net',
-                'ns-1923.awsdns-48.co.uk'
+                'ns-1643.awsdns-13.co.uk',
+                'ns-329.awsdns-41.com',
+                'ns-546.awsdns-04.net',
+                'ns-1323.awsdns-37.org'
+            ]
+        )
+
+        usw2hellozone = _route53.NsRecord(
+            self, 'usw2hellozone',
+            zone = hostzone,
+            record_name = 'usw2.hello.lukach.io',
+            values=[
+                'ns-1903.awsdns-45.co.uk',
+                'ns-504.awsdns-63.com',
+                'ns-1405.awsdns-47.org',
+                'ns-547.awsdns-04.net'
             ]
         )
 
