@@ -137,6 +137,48 @@ class DomainsLukachIo(Stack):
             ttl = Duration.minutes(300)
         )
 
+        cognito1use1 = _route53.CnameRecord(
+            self, 'cognito1use1',
+            record_name = 'sykali5xhcowdeaavdxyyku4pmck7ogh._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = 'sykali5xhcowdeaavdxyyku4pmck7ogh.dkim.amazonses.com'
+        )
+
+        cognito2use1 = _route53.CnameRecord(
+            self, 'cognito2use1',
+            record_name = '6ytnbvfaijsqtijptgc5mh47xpo5awzr._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = '6ytnbvfaijsqtijptgc5mh47xpo5awzr.dkim.amazonses.com'
+        )
+
+        cognito3use1 = _route53.CnameRecord(
+            self, 'cognito3use1',
+            record_name = 'elfy4djoinvs3ai6cnbtvvyc42zwgjde._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = 'elfy4djoinvs3ai6cnbtvvyc42zwgjde.dkim.amazonses.com'
+        )
+
+        cognito1usw2 = _route53.CnameRecord(
+            self, 'cognito1usw2',
+            record_name = 'ny7c3y6joyps6ljugthxkpgxve2mckzz._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = 'ny7c3y6joyps6ljugthxkpgxve2mckzz.dkim.amazonses.com'
+        )
+
+        cognito2usw2 = _route53.CnameRecord(
+            self, 'cognito2usw2',
+            record_name = 'v6pwtdfn7565zukt73yle4jy4w4uf3r3._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = 'v6pwtdfn7565zukt73yle4jy4w4uf3r3.dkim.amazonses.com'
+        )
+
+        cognito3usw2 = _route53.CnameRecord(
+            self, 'cognito3usw2',
+            record_name = '6vrdzilhg2pthuj4ub5vadb7qd3amegw._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = '6vrdzilhg2pthuj4ub5vadb7qd3amegw.dkim.amazonses.com'
+        )
+
     ### ACM CERTIFICATE ###
 
         acm = _acm.Certificate(
