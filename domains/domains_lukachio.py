@@ -76,24 +76,24 @@ class DomainsLukachIo(Stack):
         use1hellozone = _route53.NsRecord(
             self, 'use1hellozone',
             zone = hostzone,
-            record_name = 'use1.hello.lukach.io',
+            record_name = 'hello-use1.lukach.io',
             values=[
-                'ns-1643.awsdns-13.co.uk',
-                'ns-329.awsdns-41.com',
-                'ns-546.awsdns-04.net',
-                'ns-1323.awsdns-37.org'
+                'ns-545.awsdns-04.net',
+                'ns-12.awsdns-01.com',
+                'ns-1138.awsdns-14.org',
+                'ns-1648.awsdns-14.co.uk'
             ]
         )
 
         usw2hellozone = _route53.NsRecord(
             self, 'usw2hellozone',
             zone = hostzone,
-            record_name = 'usw2.hello.lukach.io',
+            record_name = 'hello-usw2.lukach.io',
             values=[
-                'ns-1903.awsdns-45.co.uk',
-                'ns-504.awsdns-63.com',
-                'ns-1405.awsdns-47.org',
-                'ns-547.awsdns-04.net'
+                'ns-1967.awsdns-53.co.uk',
+                'ns-744.awsdns-29.net',
+                'ns-1375.awsdns-43.org',
+                'ns-401.awsdns-50.com'
             ]
         )
 
