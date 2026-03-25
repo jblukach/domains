@@ -191,6 +191,27 @@ class DomainsLukachIo(Stack):
             domain_name = '6vrdzilhg2pthuj4ub5vadb7qd3amegw.dkim.amazonses.com'
         )
 
+        webmonitor1use2 = _route53.CnameRecord(
+            self, 'webmonitor1use2',
+            record_name = 'ozclfupiere7uz5jmvsfidvzkgd46wih._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = 'ozclfupiere7uz5jmvsfidvzkgd46wih.dkim.amazonses.com'
+        )
+
+        webmonitor2use2 = _route53.CnameRecord(
+            self, 'webmonitor2use2',
+            record_name = 'pqve7uryurmuegejoasibv5ts3lieef7._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = 'pqve7uryurmuegejoasibv5ts3lieef7.dkim.amazonses.com
+        )
+
+        webmonitor3use2 = _route53.CnameRecord(
+            self, 'webmonitor3use2',
+            record_name = 'r7d74mv4x2ufoivtr2c56ztklt7hnbae._domainkey.lukach.io',
+            zone = hostzone,
+            domain_name = 'r7d74mv4x2ufoivtr2c56ztklt7hnbae.dkim.amazonses.com'
+        )
+
     ### ACM CERTIFICATE ###
 
         acm = _acm.Certificate(
