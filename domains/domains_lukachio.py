@@ -202,7 +202,7 @@ class DomainsLukachIo(Stack):
             self, 'webmonitor2use2',
             record_name = 'pqve7uryurmuegejoasibv5ts3lieef7._domainkey.lukach.io',
             zone = hostzone,
-            domain_name = 'pqve7uryurmuegejoasibv5ts3lieef7.dkim.amazonses.com
+            domain_name = 'pqve7uryurmuegejoasibv5ts3lieef7.dkim.amazonses.com'
         )
 
         webmonitor3use2 = _route53.CnameRecord(
