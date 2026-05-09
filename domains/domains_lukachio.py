@@ -10,8 +10,7 @@ from aws_cdk import (
     aws_route53 as _route53,
     aws_route53_targets as _targets,
     aws_s3 as _s3,
-    aws_s3_deployment as _deployment,
-    aws_ssm as _ssm
+    aws_s3_deployment as _deployment
 )
 
 from constructs import Construct
@@ -95,16 +94,6 @@ class DomainsLukachIo(Stack):
                 'ns-1375.awsdns-43.org',
                 'ns-401.awsdns-50.com'
             ]
-        )
-
-    ### PARAMETER ###
-
-        parameter = _ssm.StringParameter(
-            self, 'parameter',
-            description = 'lukach.io',
-            parameter_name = '/route53/lukachio',
-            string_value = hostzone.hosted_zone_id,
-            tier = _ssm.ParameterTier.STANDARD
         )
 
     ### MAIL RECORDS ###

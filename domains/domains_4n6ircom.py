@@ -10,7 +10,7 @@ from aws_cdk import (
     aws_route53 as _route53,
     aws_route53_targets as _targets,
     aws_s3 as _s3,
-    aws_ssm as _ssm
+    aws_s3_deployment as _deployment
 )
 
 from constructs import Construct
@@ -60,14 +60,16 @@ class Domains4n6irCom(Stack):
             query_logs_log_group_arn = logs.log_group_arn
         )
 
-    ### PARAMETER ###
-
-        parameter = _ssm.StringParameter(
-            self, 'parameter',
-            description = '4n6ir.com',
-            parameter_name = '/route53/4n6ircom',
-            string_value = hostzone.hosted_zone_id,
-            tier = _ssm.ParameterTier.STANDARD
+        osintdev = _route53.NsRecord(
+            self, 'osintdev',
+            zone = hostzone,
+            record_name = 'dev.osint.4n6ir.com',
+            values=[
+                'ns-864.awsdns-44.net',
+                'ns-1769.awsdns-29.co.uk',
+                'ns-508.awsdns-63.com',
+                'ns-1460.awsdns-54.org'
+            ]
         )
 
     ### MAIL RECORDS ###
@@ -155,6 +157,12 @@ class Domains4n6irCom(Stack):
             validation = _acm.CertificateValidation.from_dns(hostzone)
         )
 
+        cdnacm = _acm.Certificate(
+            self, 'cdnacm',
+            domain_name = 'cdn.4n6ir.com',
+            validation = _acm.CertificateValidation.from_dns(hostzone)
+        )
+
     ### S3 BUCKET ###
 
         bucket = _s3.Bucket(
@@ -165,6 +173,23 @@ class Domains4n6irCom(Stack):
             auto_delete_objects = True,
             enforce_ssl = True,
             versioned = False
+        )
+
+        cache = _s3.Bucket(
+            self, 'cache',
+            encryption = _s3.BucketEncryption.S3_MANAGED,
+            block_public_access = _s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy = RemovalPolicy.DESTROY,
+            auto_delete_objects = True,
+            enforce_ssl = True,
+            versioned = False
+        )
+
+        deployment = _deployment.BucketDeployment(
+            self, 'deployment',
+            sources = [_deployment.Source.asset('4n6ir')],
+            destination_bucket = cache,
+            prune = False
         )
 
     ### CLOUDFRONT FUNCTIONS ###
@@ -211,6 +236,31 @@ class Domains4n6irCom(Stack):
             certificate = acm
         )
 
+        cdndistribution = _cloudfront.Distribution(
+            self, 'cdndistribution',
+            comment = 'cdn.4n6ir.com',
+            default_behavior = _cloudfront.BehaviorOptions(
+                origin = _origins.S3BucketOrigin.with_origin_access_control(cache),
+                viewer_protocol_policy = _cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                cache_policy = _cloudfront.CachePolicy.CACHING_OPTIMIZED
+            ),
+            domain_names = [
+                'cdn.4n6ir.com'
+            ],
+            error_responses = [
+                _cloudfront.ErrorResponse(
+                    http_status = 404,
+                    response_http_status = 200,
+                    response_page_path = '/'
+                )
+            ],
+            minimum_protocol_version = _cloudfront.SecurityPolicyProtocol.TLS_V1_3_2025,
+            price_class = _cloudfront.PriceClass.PRICE_CLASS_ALL,
+            http_version = _cloudfront.HttpVersion.HTTP2_AND_3,
+            enable_ipv6 = True,
+            certificate = cdnacm
+        )
+
     ### WEBSITE RECORDS ###
 
         alias = _route53.ARecord(
@@ -227,6 +277,13 @@ class Domains4n6irCom(Stack):
             domain_name = '4n6ir.github.io'
         )
 
+        cdn = _route53.ARecord(
+            self, 'cdn',
+            zone = hostzone,
+            record_name = 'cdn.4n6ir.com',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(cdndistribution))
+        )
+
         www = _route53.ARecord(
             self, 'www',
             zone = hostzone,
@@ -239,6 +296,13 @@ class Domains4n6irCom(Stack):
             zone = hostzone,
             record_name = '4n6ir.com',
             target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(distribution))
+        )
+
+        cdnaaa = _route53.AaaaRecord(
+            self, 'cdnaaa',
+            zone = hostzone,
+            record_name = 'cdn.4n6ir.com',
+            target = _route53.RecordTarget.from_alias(_targets.CloudFrontTarget(cdndistribution))
         )
 
         wwwaaa = _route53.AaaaRecord(

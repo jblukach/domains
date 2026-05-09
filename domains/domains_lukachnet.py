@@ -9,8 +9,7 @@ from aws_cdk import (
     aws_logs as _logs,
     aws_route53 as _route53,
     aws_route53_targets as _targets,
-    aws_s3 as _s3,
-    aws_ssm as _ssm
+    aws_s3 as _s3
 )
 
 from constructs import Construct
@@ -58,16 +57,6 @@ class DomainsLukachNet(Stack):
             zone_name = 'lukach.net',
             comment = 'lukach.net',
             query_logs_log_group_arn = logs.log_group_arn
-        )
-
-    ### PARAMETER ###
-
-        parameter = _ssm.StringParameter(
-            self, 'parameter',
-            description = 'lukach.net',
-            parameter_name = '/route53/lukachnet',
-            string_value = hostzone.hosted_zone_id,
-            tier = _ssm.ParameterTier.STANDARD
         )
 
     ### MAIL RECORDS ###
