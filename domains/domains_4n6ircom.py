@@ -114,6 +114,29 @@ class Domains4n6irCom(Stack):
             ttl = Duration.minutes(300)
         )
 
+    ### DEV SES RECORDS ###
+
+        devsesone = _route53.CnameRecord(
+            self, 'devsesone',
+            record_name = 'dg4uvxot4lhmf5f4gs7lossuq4fayydi._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = 'dg4uvxot4lhmf5f4gs7lossuq4fayydi.dkim.amazonses.com'
+        )
+
+        devsestwo = _route53.CnameRecord(
+            self, 'devsestwo',
+            record_name = 'iwkswgbo5r3fjr5rnktzqxgpb3xesbo2._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = 'iwkswgbo5r3fjr5rnktzqxgpb3xesbo2.dkim.amazonses.com'
+        )
+
+        devsesthree = _route53.CnameRecord(
+            self, 'devsesthree',
+            record_name = '6tg2jnp7kjqrfuoyqqhtsqslc33xw2kp._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = '6tg2jnp7kjqrfuoyqqhtsqslc33xw2kp.dkim.amazonses.com'
+        )
+
     ### DOMAIN VALIDATION ###
 
         _route53.TxtRecord(
