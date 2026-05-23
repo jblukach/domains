@@ -72,6 +72,18 @@ class Domains4n6irCom(Stack):
             ]
         )
 
+        osintbeta = _route53.NsRecord(
+            self, 'osintbeta',
+            zone = hostzone,
+            record_name = 'beta.osint.4n6ir.com',
+            values=[
+                'ns-799.awsdns-35.net',
+                'ns-16.awsdns-02.com',
+                'ns-1644.awsdns-13.co.uk',
+                'ns-1384.awsdns-45.org'
+            ]
+        )
+
     ### MAIL RECORDS ###
 
         mx = _route53.MxRecord(
@@ -135,6 +147,29 @@ class Domains4n6irCom(Stack):
             record_name = '6tg2jnp7kjqrfuoyqqhtsqslc33xw2kp._domainkey.4n6ir.com',
             zone = hostzone,
             domain_name = '6tg2jnp7kjqrfuoyqqhtsqslc33xw2kp.dkim.amazonses.com'
+        )
+
+    ### BETA SES RECORDS ###
+
+        betasesone = _route53.CnameRecord(
+            self, 'betasesone',
+            record_name = 'ke5gf6evjcnpsfx3gqh3acypgahhdjc4._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = 'ke5gf6evjcnpsfx3gqh3acypgahhdjc4.dkim.amazonses.com'
+        )
+
+        betasestwo = _route53.CnameRecord(
+            self, 'betasestwo',
+            record_name = 'vz4otdnzapaicnadtei3qrcbwzmhwmeq._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = 'vz4otdnzapaicnadtei3qrcbwzmhwmeq.dkim.amazonses.com'
+        )
+
+        betasesthree = _route53.CnameRecord(
+            self, 'betasesthree',
+            record_name = 'wk345qw3pt4iltvjqfj6mratzljxtezo._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = 'wk345qw3pt4iltvjqfj6mratzljxtezo.dkim.amazonses.com'
         )
 
     ### DOMAIN VALIDATION ###
