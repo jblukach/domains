@@ -245,7 +245,7 @@ class Domains4n6irCom(Stack):
 
         deployment = _deployment.BucketDeployment(
             self, 'deployment',
-            sources = [_deployment.Source.asset('4n6ir')],
+            sources = [_deployment.Source.asset('cache')],
             destination_bucket = cache,
             prune = False
         )

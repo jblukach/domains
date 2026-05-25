@@ -72,30 +72,6 @@ class DomainsLukachIo(Stack):
             ]
         )
 
-        use1hellozone = _route53.NsRecord(
-            self, 'use1hellozone',
-            zone = hostzone,
-            record_name = 'hello-use1.lukach.io',
-            values=[
-                'ns-545.awsdns-04.net',
-                'ns-12.awsdns-01.com',
-                'ns-1138.awsdns-14.org',
-                'ns-1648.awsdns-14.co.uk'
-            ]
-        )
-
-        usw2hellozone = _route53.NsRecord(
-            self, 'usw2hellozone',
-            zone = hostzone,
-            record_name = 'hello-usw2.lukach.io',
-            values=[
-                'ns-1967.awsdns-53.co.uk',
-                'ns-744.awsdns-29.net',
-                'ns-1375.awsdns-43.org',
-                'ns-401.awsdns-50.com'
-            ]
-        )
-
     ### MAIL RECORDS ###
 
         mx = _route53.MxRecord(
@@ -136,69 +112,6 @@ class DomainsLukachIo(Stack):
             record_name = '_dmarc',
             values = ['v=DMARC1; p=reject; rua=mailto:hello@lukach.io; ruf=mailto:hello@lukach.io;'],
             ttl = Duration.minutes(300)
-        )
-
-        cognito1use1 = _route53.CnameRecord(
-            self, 'cognito1use1',
-            record_name = 'sykali5xhcowdeaavdxyyku4pmck7ogh._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = 'sykali5xhcowdeaavdxyyku4pmck7ogh.dkim.amazonses.com'
-        )
-
-        cognito2use1 = _route53.CnameRecord(
-            self, 'cognito2use1',
-            record_name = '6ytnbvfaijsqtijptgc5mh47xpo5awzr._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = '6ytnbvfaijsqtijptgc5mh47xpo5awzr.dkim.amazonses.com'
-        )
-
-        cognito3use1 = _route53.CnameRecord(
-            self, 'cognito3use1',
-            record_name = 'elfy4djoinvs3ai6cnbtvvyc42zwgjde._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = 'elfy4djoinvs3ai6cnbtvvyc42zwgjde.dkim.amazonses.com'
-        )
-
-        cognito1usw2 = _route53.CnameRecord(
-            self, 'cognito1usw2',
-            record_name = 'ny7c3y6joyps6ljugthxkpgxve2mckzz._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = 'ny7c3y6joyps6ljugthxkpgxve2mckzz.dkim.amazonses.com'
-        )
-
-        cognito2usw2 = _route53.CnameRecord(
-            self, 'cognito2usw2',
-            record_name = 'v6pwtdfn7565zukt73yle4jy4w4uf3r3._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = 'v6pwtdfn7565zukt73yle4jy4w4uf3r3.dkim.amazonses.com'
-        )
-
-        cognito3usw2 = _route53.CnameRecord(
-            self, 'cognito3usw2',
-            record_name = '6vrdzilhg2pthuj4ub5vadb7qd3amegw._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = '6vrdzilhg2pthuj4ub5vadb7qd3amegw.dkim.amazonses.com'
-        )
-
-        webmonitor1use2 = _route53.CnameRecord(
-            self, 'webmonitor1use2',
-            record_name = 'ozclfupiere7uz5jmvsfidvzkgd46wih._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = 'ozclfupiere7uz5jmvsfidvzkgd46wih.dkim.amazonses.com'
-        )
-
-        webmonitor2use2 = _route53.CnameRecord(
-            self, 'webmonitor2use2',
-            record_name = 'pqve7uryurmuegejoasibv5ts3lieef7._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = 'pqve7uryurmuegejoasibv5ts3lieef7.dkim.amazonses.com'
-        )
-
-        webmonitor3use2 = _route53.CnameRecord(
-            self, 'webmonitor3use2',
-            record_name = 'r7d74mv4x2ufoivtr2c56ztklt7hnbae._domainkey.lukach.io',
-            zone = hostzone,
-            domain_name = 'r7d74mv4x2ufoivtr2c56ztklt7hnbae.dkim.amazonses.com'
         )
 
     ### ACM CERTIFICATE ###
