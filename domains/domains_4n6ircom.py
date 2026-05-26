@@ -84,6 +84,18 @@ class Domains4n6irCom(Stack):
             ]
         )
 
+        osintprod = _route53.NsRecord(
+            self, 'osintprod',
+            zone = hostzone,
+            record_name = 'osint.4n6ir.com',
+            values=[
+                'ns-67.awsdns-08.com',
+                'ns-1844.awsdns-38.co.uk',
+                'ns-1400.awsdns-47.org',
+                'ns-930.awsdns-52.net'
+            ]
+        )
+
     ### MAIL RECORDS ###
 
         mx = _route53.MxRecord(
@@ -170,6 +182,29 @@ class Domains4n6irCom(Stack):
             record_name = 'wk345qw3pt4iltvjqfj6mratzljxtezo._domainkey.4n6ir.com',
             zone = hostzone,
             domain_name = 'wk345qw3pt4iltvjqfj6mratzljxtezo.dkim.amazonses.com'
+        )
+
+    ### PROD SES RECORDS ###
+
+        prodsesone = _route53.CnameRecord(
+            self, 'prodsesone',
+            record_name = '2rdtx2uh2mxmsvluqlaqqv7x7nhazmwa._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = '2rdtx2uh2mxmsvluqlaqqv7x7nhazmwa.dkim.amazonses.com'
+        )
+
+        prodsestwo = _route53.CnameRecord(
+            self, 'prodsestwo',
+            record_name = 'canqq3yhqre6qwcnmx2y36u5mkcl5sbx._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = 'canqq3yhqre6qwcnmx2y36u5mkcl5sbx.dkim.amazonses.com'
+        )
+
+        prodsesthree = _route53.CnameRecord(
+            self, 'prodsesthree',
+            record_name = '2cwyuhozewy4suy44hmscnurhwwohrbe._domainkey.4n6ir.com',
+            zone = hostzone,
+            domain_name = '2cwyuhozewy4suy44hmscnurhwwohrbe.dkim.amazonses.com'
         )
 
     ### DOMAIN VALIDATION ###
