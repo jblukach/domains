@@ -60,30 +60,6 @@ class Domains4n6irCom(Stack):
             query_logs_log_group_arn = logs.log_group_arn
         )
 
-        osintdev = _route53.NsRecord(
-            self, 'osintdev',
-            zone = hostzone,
-            record_name = 'dev.osint.4n6ir.com',
-            values=[
-                'ns-864.awsdns-44.net',
-                'ns-1769.awsdns-29.co.uk',
-                'ns-508.awsdns-63.com',
-                'ns-1460.awsdns-54.org'
-            ]
-        )
-
-        osintbeta = _route53.NsRecord(
-            self, 'osintbeta',
-            zone = hostzone,
-            record_name = 'beta.osint.4n6ir.com',
-            values=[
-                'ns-799.awsdns-35.net',
-                'ns-16.awsdns-02.com',
-                'ns-1644.awsdns-13.co.uk',
-                'ns-1384.awsdns-45.org'
-            ]
-        )
-
         osintprod = _route53.NsRecord(
             self, 'osintprod',
             zone = hostzone,
