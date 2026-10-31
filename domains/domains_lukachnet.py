@@ -83,7 +83,6 @@ class DomainsLukachNet(Stack):
                 'apple-domain=gOUpiYTLd4M1rhEa',
                 'v=spf1 include:icloud.com ~all',
                 'google-site-verification=LNWHvBz7ozTPcZmzOMdnM2cmg4oX2HtTfjoPRrjpgYY'
-                
             ]
         )
 
