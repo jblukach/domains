@@ -164,13 +164,6 @@ class DomainsLukachNet(Stack):
             versioned = False
         )
 
-        deployment = _deployment.BucketDeployment(
-            self, 'deployment',
-            sources = [_deployment.Source.asset('cache/net')],
-            destination_bucket = cache,
-            prune = False
-        )
-
     ### CLOUDFRONT FUNCTIONS ###
 
         function = _cloudfront.Function(

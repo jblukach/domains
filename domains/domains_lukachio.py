@@ -176,13 +176,6 @@ class DomainsLukachIo(Stack):
             versioned = False
         )
 
-        deployment = _deployment.BucketDeployment(
-            self, 'deployment',
-            sources = [_deployment.Source.asset('cache/io')],
-            destination_bucket = cache,
-            prune = False
-        )
-
     ### CLOUDFRONT FUNCTIONS ###
 
         function = _cloudfront.Function(

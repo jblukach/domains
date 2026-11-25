@@ -70,7 +70,7 @@ DomainsStack(
 )
 
 cdk.Tags.of(app).add('Alias','domains')
+cdk.Tags.of(app).add('Domain','lukach.io')
 cdk.Tags.of(app).add('GitHub','https://github.com/jblukach/domains')
-cdk.Tags.of(app).add('Org','lukach.io')
 
 app.synth()
