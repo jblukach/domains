@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os
 
+# Keep the jsii cache outside potentially group-writable XDG cache directories.
+os.environ.setdefault('JSII_RUNTIME_PACKAGE_CACHE_ROOT', os.path.expanduser('~/.jsii-package-cache'))
+
 import aws_cdk as cdk
 
 from domains.domains_4n6ircom import Domains4n6irCom

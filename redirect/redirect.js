@@ -1,7 +1,7 @@
 function handler(event) {
   const response = {
-    statusCode: 302,
-    statusDescription: 'Found',
+    statusCode: 301,
+    statusDescription: 'Moved Permanently',
     headers: {
       'location': {value: 'https://github.com/jblukach'},
     }

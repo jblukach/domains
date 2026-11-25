@@ -57,6 +57,7 @@ class Domains4n6irCom(Stack):
             self, 'hostzone', 
             zone_name = '4n6ir.com',
             comment = '4n6ir.com',
+            accelerated_recovery_enabled = True,
             query_logs_log_group_arn = logs.log_group_arn
         )
 
@@ -215,6 +216,26 @@ class Domains4n6irCom(Stack):
             ttl = Duration.minutes(300)
         )
 
+        _route53.TxtRecord(
+            self, '_github-pages-challenge-4n6ir.4n6ir.com',
+            zone = hostzone,
+            record_name = '_github-pages-challenge-4n6ir.4n6ir.com',
+            values = [
+                'fd49e53cffb0a8619b20d8fd87b9a5'
+            ],
+            ttl = Duration.minutes(300)
+        )
+
+        _route53.TxtRecord(
+            self, '_github-pages-challenge-4n6ir.blog.4n6ir.com',
+            zone = hostzone,
+            record_name = '_github-pages-challenge-4n6ir.blog.4n6ir.com',
+            values = [
+                '5e77be526dd66584baa314d780aa2b'
+            ],
+            ttl = Duration.minutes(300)
+        )
+
     ### ACM CERTIFICATE ###
 
         acm = _acm.Certificate(
@@ -256,7 +277,7 @@ class Domains4n6irCom(Stack):
 
         deployment = _deployment.BucketDeployment(
             self, 'deployment',
-            sources = [_deployment.Source.asset('cache')],
+            sources = [_deployment.Source.asset('cache/4n6ir')],
             destination_bucket = cache,
             prune = False
         )

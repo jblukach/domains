@@ -57,6 +57,7 @@ class DomainsLukachIo(Stack):
             self, 'hostzone', 
             zone_name = 'lukach.io',
             comment = 'lukach.io',
+            accelerated_recovery_enabled = True,
             query_logs_log_group_arn = logs.log_group_arn
         )
 
@@ -114,6 +115,28 @@ class DomainsLukachIo(Stack):
             ttl = Duration.minutes(300)
         )
 
+    ### DOMAIN VALIDATION ###
+
+        _route53.TxtRecord(
+            self, '_github-pages-challenge-jblukach.lukach.io',
+            zone = hostzone,
+            record_name = '_github-pages-challenge-jblukach.lukach.io',
+            values = [
+                '5bce42de4c6d2c8da089f953d00b4f'
+            ],
+            ttl = Duration.minutes(300)
+        )
+
+        _route53.TxtRecord(
+            self, '_github-pages-challenge-jblukach.blog.lukach.io',
+            zone = hostzone,
+            record_name = '_github-pages-challenge-jblukach.blog.lukach.io',
+            values = [
+                'c5bc8e16a21199a62497d7a6de5351'
+            ],
+            ttl = Duration.minutes(300)
+        )
+
     ### ACM CERTIFICATE ###
 
         acm = _acm.Certificate(
@@ -155,7 +178,7 @@ class DomainsLukachIo(Stack):
 
         deployment = _deployment.BucketDeployment(
             self, 'deployment',
-            sources = [_deployment.Source.asset('cache')],
+            sources = [_deployment.Source.asset('cache/io')],
             destination_bucket = cache,
             prune = False
         )

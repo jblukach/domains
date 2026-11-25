@@ -18,6 +18,7 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
 
 ### 🌐 DNS & Domain Management (Route 53)
 - Public hosted zones for **4n6ir.com**, **lostmedium.com**, **lukach.io**, and **lukach.net**.
+- Accelerated recovery enabled for all four public hosted zones.
 - **13 months of DNS query logging** stored in CloudWatch Logs.
 - Fully managed DNS records:
   - **MX** (mail routing)
@@ -38,13 +39,15 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
 
 ### 🌎 CloudFront CDN & Functions
 - CloudFront distributions serving every domain over **IPv4** and **IPv6** with **HTTP/2 + HTTP/3** and a **TLS 1.3** minimum security policy.
-- CloudFront Functions for lightweight redirect logic:
+- CloudFront Functions for lightweight permanent (HTTP 301) redirects:
   - `4n6ir.com` / `www.4n6ir.com` → `https://github.com/4n6ir`
   - `lostmedium.com` / `www.lostmedium.com` → `https://github.com/lostmedium`
   - `lukach.io`, `lukach.net`, and `www` variants → `https://github.com/jblukach`
 - Static asset CDNs backed by private S3 buckets with Origin Access Control:
   - `https://cdn.4n6ir.com`
+  - `https://cdn.lostmedium.com`
   - `https://cdn.lukach.io`
+  - `https://cdn.lukach.net`
 - Blog subdomains pointed at GitHub Pages:
   - `blog.4n6ir.com` → `4n6ir.github.io`
   - `blog.lukach.io` → `jblukach.github.io`
@@ -92,3 +95,16 @@ To deploy manually:
 pip install -r requirements.txt
 cdk deploy --all
 ```
+
+To diff all stacks with the `dns` profile, use a quoted stack wildcard.
+`cdk diff` and `cdk list` do not accept `--all`:
+
+```bash
+cdk diff --profile dns '*'
+```
+
+The app defaults the jsii package cache to `~/.jsii-package-cache` to avoid
+group-writable shared cache directories. Override it with
+`JSII_RUNTIME_PACKAGE_CACHE_ROOT`, or set `JSII_RUNTIME_PACKAGE_CACHE=disabled`
+to disable caching. The cache and its parent directories must be owned by you
+or root and must not be writable by group or others.
