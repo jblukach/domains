@@ -61,6 +61,18 @@ class Domains4n6irCom(Stack):
             query_logs_log_group_arn = logs.log_group_arn
         )
 
+        authzone = _route53.NsRecord(
+            self, 'authzone',
+            zone = hostzone,
+            record_name = 'auth.4n6ir.com',
+            values=[
+                'ns-161.awsdns-20.com',
+                'ns-1393.awsdns-46.org',
+                'ns-834.awsdns-40.net',
+                'ns-1835.awsdns-37.co.uk'
+            ]
+        )
+
         osintprod = _route53.NsRecord(
             self, 'osintprod',
             zone = hostzone,
