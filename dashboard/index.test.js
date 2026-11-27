@@ -275,7 +275,7 @@ test('escapes the account email and rejects a missing email claim', async () => 
   const f = fixture({ email: '<script>alert("x")</script>&' });
   const page = await f.handler(request('/', '4n6ir.com', await f.login()));
   assert.match(page.body, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;&amp;/);
-  assert.doesNotMatch(page.body, /<script>/);
+  assert.doesNotMatch(page.body, /<script>/i);
   const missing = fixture({ email: undefined });
   const session = await missing.login();
   const originalLog = console.error;
