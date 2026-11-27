@@ -21,6 +21,9 @@ class DashboardStackTest(unittest.TestCase):
                 'Aliases': ['4n6ir.com', 'www.4n6ir.com'],
                 'DefaultCacheBehavior': Match.object_like({
                     'CachePolicyId': '4135ea2d-6df8-44a3-9df3-4b5a84be39ad',
+                    'AllowedMethods': [
+                        'GET', 'HEAD', 'OPTIONS', 'PUT', 'PATCH', 'POST', 'DELETE',
+                    ],
                     'LambdaFunctionAssociations': [{
                         'EventType': 'viewer-request',
                         'LambdaFunctionARN': Match.any_value(),

@@ -39,7 +39,7 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
 
 ### 🌎 CloudFront CDN & Functions
 - CloudFront distributions serving every domain over **IPv4** and **IPv6** with **HTTP/2 + HTTP/3** and a **TLS 1.3** minimum security policy.
-- `4n6ir.com` / `www.4n6ir.com` use Lambda@Edge to authenticate with Cognito Managed Login at `auth.4n6ir.com` and show an authenticated landing page.
+- `4n6ir.com` / `www.4n6ir.com` use Lambda@Edge and Cognito Managed Login at `auth.4n6ir.com` for a customer dashboard restricted to `DashboardUsers`.
 - CloudFront Functions for lightweight permanent (HTTP 301) redirects:
   - `lostmedium.com` / `www.lostmedium.com` → `https://github.com/lostmedium`
   - `lukach.io`, `lukach.net`, and `www` variants → `https://github.com/jblukach`
@@ -111,13 +111,35 @@ parameter ARNs, `ssm:GetParameters` on those ARNs, and regional access to the
 replicated secret and KMS key.
 
 The edge handler uses authorization code + PKCE, validates the Cognito ID
-token and nonce, and stores the ID and encrypted refresh tokens in host-only,
-Secure, HttpOnly cookies. It refreshes expired ID tokens for up to one day.
-An issued ID token remains usable until it expires, even if its Cognito
-session is revoked; this landing page does not provide sign-out.
-Both hostnames have separate browser sessions. This page checks authentication,
-not per-application authorization: self-registration is enabled in the
-Cognito project, and future tiles must use their own clients and access rules.
+token and nonce, checks its `cognito:groups` claim for `DashboardUsers`, and
+displays its email claim. Visitors see public Blog and GitHub tiles and can
+start sign-in from the upper-right link. Signed-in dashboard members also see
+an applications section. It stores the ID and encrypted refresh tokens in
+host-only, Secure, HttpOnly cookies and refreshes expired ID tokens for up to
+one day. Group changes take effect when a new ID token is issued; existing
+tokens can remain usable until they expire. Sign-out revokes the current
+refresh token through Cognito, clears the local cookies, and redirects to
+Cognito's logout endpoint. If revocation fails, sign-out reports an error and
+retains the session so it can be retried. Cognito also revokes associated
+tokens, but this dashboard validates ID tokens offline and cannot detect
+their revocation: a copied ID token can still be used until it expires.
+The two hostnames have separate local sessions; signing out on one does not
+revoke the other's refresh token.
+Before deployment, Cognito must disable self-registration for `DashboardUsers`
+and grant that group only through an explicit administrator approval process.
+Membership alone is not an authorization boundary if users can grant the group
+to themselves during sign-up.
+
+The dashboard currently shows an empty applications section: Cognito's ID
+token provides group membership but not a catalog of app clients, display
+names, launch URLs, or required groups. For future tiles, the Cognito project
+should provide an authenticated, non-secret app catalog mapping each app to
+its launch URL and required group, with an explicit policy for users with
+multiple groups. The dashboard can then filter that catalog using validated
+claims. Each destination application must independently enforce its own
+authorization; hiding a tile is not access control. Do not expose app-client
+secrets in the catalog or browser.
+
 The `auth.4n6ir.com` Managed Login domain already routes to the Cognito
 replica based on the health check configured by the Cognito repository. Keep
 using that domain for authorize and token requests; the pool replica shares

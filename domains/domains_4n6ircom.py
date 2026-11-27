@@ -367,6 +367,7 @@ class Domains4n6irCom(Stack):
                 origin = _origins.S3BucketOrigin.with_origin_access_control(bucket),
                 viewer_protocol_policy = _cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 cache_policy = _cloudfront.CachePolicy.CACHING_DISABLED,
+                allowed_methods = _cloudfront.AllowedMethods.ALLOW_ALL,
                 edge_lambdas = [
                     _cloudfront.EdgeLambda(
                         function_version = dashboard_edge.current_version,
