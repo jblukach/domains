@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_cloudfront as _cloudfront,
     aws_cloudfront_origins as _origins,
     aws_iam as _iam,
+    aws_lambda as _lambda,
     aws_logs as _logs,
     aws_route53 as _route53,
     aws_route53_targets as _targets,
@@ -294,14 +295,67 @@ class Domains4n6irCom(Stack):
             prune = False
         )
 
-    ### CLOUDFRONT FUNCTIONS ###
+    ### DASHBOARD AUTHENTICATION ###
 
-        function = _cloudfront.Function(
-            self, 'function',
-            code = _cloudfront.FunctionCode.from_file(
-                file_path = 'redirect/4n6ir.js'
+        edge_role = _iam.Role(
+            self, 'dashboard-edge-role',
+            assumed_by = _iam.CompositePrincipal(
+                _iam.ServicePrincipal('lambda.amazonaws.com'),
+                _iam.ServicePrincipal('edgelambda.amazonaws.com')
             ),
-            runtime = _cloudfront.FunctionRuntime.JS_2_0
+            managed_policies = [
+                _iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')
+            ]
+        )
+        edge_role.add_to_policy(_iam.PolicyStatement(
+            actions = ['ssm:GetParameter'],
+            resources = [
+                'arn:aws:ssm:us-east-1:*:parameter/cognito/issuer',
+                'arn:aws:ssm:us-west-2:*:parameter/cognito/issuer'
+            ]
+        ))
+        edge_role.add_to_policy(_iam.PolicyStatement(
+            actions = ['ssm:DescribeParameters'],
+            resources = ['*']
+        ))
+        edge_role.add_to_policy(_iam.PolicyStatement(
+            actions = ['ssm:GetParameters'],
+            resources = [
+                'arn:aws:ssm:us-east-1:*:parameter/cognito/encrypt',
+                'arn:aws:ssm:us-east-1:*:parameter/cognito/secret',
+                'arn:aws:ssm:us-west-2:*:parameter/cognito/encrypt',
+                'arn:aws:ssm:us-west-2:*:parameter/cognito/secret'
+            ]
+        ))
+        edge_role.add_to_policy(_iam.PolicyStatement(
+            actions = ['secretsmanager:GetSecretValue'],
+            resources = [
+                'arn:aws:secretsmanager:us-east-1:*:secret:credentials-*',
+                'arn:aws:secretsmanager:us-west-2:*:secret:credentials-*'
+            ]
+        ))
+        for cognito_region in ['us-east-1', 'us-west-2']:
+            edge_role.add_to_policy(_iam.PolicyStatement(
+                actions = ['kms:Decrypt'],
+                resources = [f'arn:aws:kms:{cognito_region}:*:key/*'],
+                conditions = {
+                    'StringEquals': {
+                        'kms:ViaService': f'secretsmanager.{cognito_region}.amazonaws.com'
+                    },
+                    'StringLike': {
+                        'kms:EncryptionContext:SecretARN':
+                            f'arn:aws:secretsmanager:{cognito_region}:*:secret:credentials-*'
+                    }
+                }
+            ))
+        dashboard_edge = _lambda.Function(
+            self, 'dashboard-edge',
+            runtime = _lambda.Runtime.NODEJS_22_X,
+            handler = 'index.handler',
+            code = _lambda.Code.from_asset('dashboard', exclude = ['*.test.js']),
+            role = edge_role,
+            timeout = Duration.seconds(20),
+            memory_size = 256
         )
 
     ### CLOUDFRONT DISTRIBUTIONS ###
@@ -313,23 +367,16 @@ class Domains4n6irCom(Stack):
                 origin = _origins.S3BucketOrigin.with_origin_access_control(bucket),
                 viewer_protocol_policy = _cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 cache_policy = _cloudfront.CachePolicy.CACHING_DISABLED,
-                function_associations = [
-                    _cloudfront.FunctionAssociation(
-                        function = function,
-                        event_type = _cloudfront.FunctionEventType.VIEWER_REQUEST
-                    )   
+                edge_lambdas = [
+                    _cloudfront.EdgeLambda(
+                        function_version = dashboard_edge.current_version,
+                        event_type = _cloudfront.LambdaEdgeEventType.VIEWER_REQUEST
+                    )
                 ]
             ),
             domain_names = [
                 '4n6ir.com',
                 'www.4n6ir.com'
-            ],
-            error_responses = [
-                _cloudfront.ErrorResponse(
-                    http_status = 404,
-                    response_http_status = 200,
-                    response_page_path = '/'
-                )
             ],
             minimum_protocol_version = _cloudfront.SecurityPolicyProtocol.TLS_V1_3_2025,
             price_class = _cloudfront.PriceClass.PRICE_CLASS_ALL,

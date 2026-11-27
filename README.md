@@ -39,8 +39,8 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
 
 ### 🌎 CloudFront CDN & Functions
 - CloudFront distributions serving every domain over **IPv4** and **IPv6** with **HTTP/2 + HTTP/3** and a **TLS 1.3** minimum security policy.
+- `4n6ir.com` / `www.4n6ir.com` use Lambda@Edge to authenticate with Cognito Managed Login at `auth.4n6ir.com` and show an authenticated landing page.
 - CloudFront Functions for lightweight permanent (HTTP 301) redirects:
-  - `4n6ir.com` / `www.4n6ir.com` → `https://github.com/4n6ir`
   - `lostmedium.com` / `www.lostmedium.com` → `https://github.com/lostmedium`
   - `lukach.io`, `lukach.net`, and `www` variants → `https://github.com/jblukach`
 - Static asset CDNs backed by private S3 buckets with Origin Access Control:
@@ -59,7 +59,7 @@ It provides secure, credential-free deployments, full DNS management, CloudFront
 | Stack | Purpose |
 |-------|---------|
 | `DomainsStack` | GitHub OIDC provider and deployment IAM role |
-| `Domains4n6irCom` | DNS, certificates, redirects, and CDN for 4n6ir.com |
+| `Domains4n6irCom` | DNS, certificates, authenticated dashboard, and CDN for 4n6ir.com |
 | `DomainsLostMediumCom` | DNS, certificates, and redirects for lostmedium.com |
 | `DomainsLukachIo` | DNS, certificates, redirects, and CDN for lukach.io |
 | `DomainsLukachNet` | DNS, certificates, and redirects for lukach.net |
@@ -74,6 +74,7 @@ All stacks deploy to **us-east-1** using the CDK bootstrap qualifier `lukach`.
 app.py              CDK application entry point
 domains/            CDK stack definitions
 redirect/           CloudFront Function redirect handlers
+dashboard/          Lambda@Edge authentication and landing page
 whoami/             CloudFront Function returning the viewer IP
 cache/              Static assets deployed to the CDN buckets
 .github/workflows/  GitHub Actions deployment workflow
@@ -88,6 +89,51 @@ Deployments run automatically via GitHub Actions (`.github/workflows/domains.yam
 - On every push to `main`.
 - On a monthly schedule to keep resources refreshed.
 - Authenticates to AWS with OIDC and runs `cdk deploy --all`.
+
+### 4n6ir dashboard prerequisites
+
+Deploy the [Cognito identity provider](https://github.com/jblukach/cognito) first.
+The Cognito account shares `/cognito/issuer`, `/cognito/secret`, and
+`/cognito/encrypt` with the Domains account in both `us-east-1` and
+`us-west-2`. Both issuer parameters contain the primary pool's updated issuer;
+the replica uses the same issuer. The edge function discovers the shared
+parameter ARNs, reads the regional Secrets Manager
+replica, and tries `us-west-2` if a primary-region lookup fails. The secret
+contains the `Dashboard` app client credentials. Cognito's regional KMS key
+and secret resource policies must delegate access to the Domains account, as
+described in the Cognito repository. The Lambda role is restricted to the
+regional Cognito credential secret and KMS use through Secrets Manager.
+
+Accept RAM invitations if needed and verify both regional shares are active.
+The Lambda execution role needs `ssm:GetParameter` on the shared issuer
+parameter ARN in both Regions, `ssm:DescribeParameters` to discover the shared
+parameter ARNs, `ssm:GetParameters` on those ARNs, and regional access to the
+replicated secret and KMS key.
+
+The edge handler uses authorization code + PKCE, validates the Cognito ID
+token and nonce, and stores the ID and encrypted refresh tokens in host-only,
+Secure, HttpOnly cookies. It refreshes expired ID tokens for up to one day.
+An issued ID token remains usable until it expires, even if its Cognito
+session is revoked; this landing page does not provide sign-out.
+Both hostnames have separate browser sessions. This page checks authentication,
+not per-application authorization: self-registration is enabled in the
+Cognito project, and future tiles must use their own clients and access rules.
+The `auth.4n6ir.com` Managed Login domain already routes to the Cognito
+replica based on the health check configured by the Cognito repository. Keep
+using that domain for authorize and token requests; the pool replica shares
+the app client and primary issuer. On cold starts or configuration-cache
+refresh, the edge function independently tries each Region for the issuer and
+the client secret, and loads signing keys from either Region. If a primary SSM,
+Secrets Manager, or JWKS lookup is unavailable, it falls back to `us-west-2`.
+Configuration is cached in each edge execution environment for five minutes
+after a successful load.
+
+The old GitHub redirect is removed rather than preserved. Browsers and
+intermediaries may retain the previous permanent 301; clear their caches if
+they continue redirecting. Before production, test login and refresh on both
+hostnames, regional Cognito failover, access to the cross-account secret, and
+edge errors and logs. Synthesis and unit tests do not verify live AWS access.
+Run the local edge tests with `node --test dashboard/index.test.js`.
 
 To deploy manually:
 
