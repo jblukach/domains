@@ -229,6 +229,7 @@ test('shows consistent signed-out and signed-in pages with account links in the 
   const session = await f.login();
   const page = await f.handler(request('/', '4n6ir.com', session));
   assert.equal(page.status, '200');
+  assert.equal(page.headers['referrer-policy'][0].value, 'same-origin');
   assert.match(page.body, /<main class="content"><h2>Forensic Incident Response<\/h2>/);
   assert.match(page.body, /<div class="topbar"><span>customer@example\.com<\/span><form class="signout-form" method="POST" action="\/logout"><button class="signout" type="submit">Sign out<\/button><\/form><\/div>/);
   for (const body of [signedOut.body, page.body]) {
@@ -252,6 +253,7 @@ test('requires DashboardUsers at sign-in and on every request, including refresh
     assert.equal(callback.status, '403');
     assert.match(callback.body, /does not have access/);
     assert.match(callback.body, /<div class="topbar"><form class="signout-form" method="POST" action="\/logout"><button class="signout" type="submit">Sign out<\/button><\/form><\/div>/);
+    assert.equal(callback.headers['referrer-policy'][0].value, 'same-origin');
     assert.match(callback.body, /href="https:\/\/blog\.4n6ir\.com">Blog<\/a>/);
     assert.match(callback.body, /href="https:\/\/github\.com\/4n6ir">GitHub<\/a>/);
     assert.doesNotMatch(callback.body, /<section class="applications"/);
@@ -308,6 +310,26 @@ test('sign-out clears the local session and ends managed login on both hosts', a
     assert.match(page.body, /<div class="topbar"><a href="\/login">Sign in<\/a><\/div>/);
     const login = await f.handler(request('/login', host));
     assert.equal(new URL(location(login)).pathname, '/oauth2/authorize');
+  }
+});
+
+test('sign-out accepts a same-origin referer only when origin is absent', async () => {
+  const f = fixture();
+  for (const host of ['4n6ir.com', 'www.4n6ir.com']) {
+    const sameOrigin = request('/logout', host);
+    delete sameOrigin.Records[0].cf.request.headers.origin;
+    sameOrigin.Records[0].cf.request.headers.referer = [{ value: `https://${host}/` }];
+    assert.equal((await f.handler(sameOrigin)).status, '302');
+
+    for (const origin of ['null', 'https://attacker.example']) {
+      sameOrigin.Records[0].cf.request.headers.origin = [{ value: origin }];
+      assert.equal((await f.handler(sameOrigin)).status, '403');
+    }
+    delete sameOrigin.Records[0].cf.request.headers.origin;
+    sameOrigin.Records[0].cf.request.headers.referer = [{ value: `https://${host}.attacker.example/` }];
+    assert.equal((await f.handler(sameOrigin)).status, '403');
+    delete sameOrigin.Records[0].cf.request.headers.referer;
+    assert.equal((await f.handler(sameOrigin)).status, '403');
   }
 });
 

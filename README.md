@@ -119,8 +119,9 @@ host-only, Secure, HttpOnly cookies and refreshes expired ID tokens for up to
 one day. Group changes take effect when a new ID token is issued; existing
 tokens can remain usable until they expire. Sign-out revokes the current
 refresh token through Cognito, clears the local cookies, and redirects to
-Cognito's logout endpoint. If revocation fails, sign-out reports an error and
-retains the session so it can be retried. Cognito also revokes associated
+Cognito's logout endpoint. Sign-out requires a same-origin POST; the dashboard
+only sends referrers on same-origin requests. If revocation fails, sign-out
+reports an error and retains the session so it can be retried. Cognito also revokes associated
 tokens, but this dashboard validates ID tokens offline and cannot detect
 their revocation: a copied ID token can still be used until it expires.
 The two hostnames have separate local sessions; signing out on one does not

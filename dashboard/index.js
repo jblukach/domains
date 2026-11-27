@@ -243,7 +243,7 @@ function createHandler({ configuration, http, now = () => Date.now() }) {
     const headers = {
       'cache-control': [{ key: 'Cache-Control', value: 'no-store' }],
       'x-content-type-options': [{ key: 'X-Content-Type-Options', value: 'nosniff' }],
-      'referrer-policy': [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      'referrer-policy': [{ key: 'Referrer-Policy', value: 'same-origin' }],
       'content-security-policy': [{ key: 'Content-Security-Policy', value: "default-src 'none'; style-src 'unsafe-inline'; img-src https://cdn.4n6ir.com; base-uri 'none'; frame-ancestors 'none'" }],
     };
     if (location) headers.location = [{ key: 'Location', value: location }];
