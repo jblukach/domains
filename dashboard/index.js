@@ -211,6 +211,18 @@ function createHandler({ configuration, http, now = () => Date.now() }) {
     return claims;
   }
 
+  // ID tokens verify offline even after revocation, so ask Cognito whether the
+  // access token issued with this session is still live and belongs to the same user.
+  async function active(accessToken, claims) {
+    if (!accessToken || typeof claims.sub !== 'string') return false;
+    const result = await http('https://auth.4n6ir.com/oauth2/userInfo', {
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    if (result.status === 200) return result.body?.sub === claims.sub;
+    if (result.status >= 400 && result.status < 500) return false;
+    throw new Error(`Cognito revocation check failed: ${result.status}`);
+  }
+
   function seal(value, secret, host) {
     const key = crypto.createHash('sha256').update('4n6ir dashboard cookies:').update(secret).digest();
     const iv = crypto.randomBytes(12);
@@ -276,7 +288,7 @@ function createHandler({ configuration, http, now = () => Date.now() }) {
     });
     return response(302, '', `https://auth.4n6ir.com/oauth2/authorize?${query}`, [
       cookie('flow', seal({ state, verifier, nonce, expires: now() + 600000 }, settings.clientSecret, host), 600),
-      cookie('id', '', 0), cookie('refresh', '', 0),
+      cookie('id', '', 0), cookie('access', '', 0), cookie('refresh', '', 0),
     ]);
   }
 
@@ -328,13 +340,15 @@ ${content}</main></div><footer><p>&copy; ${new Date(now()).getUTCFullYear()} <a 
   }
 
   function sessionCookies(tokens, settings, host, expires) {
-    if (typeof tokens.id_token !== 'string' || typeof tokens.refresh_token !== 'string') {
+    if (typeof tokens.id_token !== 'string' || typeof tokens.access_token !== 'string' ||
+        typeof tokens.refresh_token !== 'string') {
       throw new Error('Cognito token response is incomplete');
     }
+    const maxAge = Math.max(0, Math.floor((expires - now()) / 1000));
     return [
-      cookie('id', tokens.id_token, Math.max(0, Math.floor((expires - now()) / 1000))),
-      cookie('refresh', seal({ token: tokens.refresh_token, expires }, settings.clientSecret, host),
-        Math.max(0, Math.floor((expires - now()) / 1000))),
+      cookie('id', tokens.id_token, maxAge),
+      cookie('access', tokens.access_token, maxAge),
+      cookie('refresh', seal({ token: tokens.refresh_token, expires }, settings.clientSecret, host), maxAge),
     ];
   }
 
@@ -393,7 +407,7 @@ ${content}</main></div><footer><p>&copy; ${new Date(now()).getUTCFullYear()} <a 
         }
         const query = new URLSearchParams({ client_id: settings.clientId, logout_uri: `https://${host}/` });
         return response(302, '', `https://auth.4n6ir.com/logout?${query}`, [
-          cookie('flow', '', 0), cookie('id', '', 0), cookie('refresh', '', 0),
+          cookie('flow', '', 0), cookie('id', '', 0), cookie('access', '', 0), cookie('refresh', '', 0),
         ]);
       }
       if (request.uri === '/login') return startLogin(settings, host);
@@ -430,7 +444,7 @@ ${content}</main></div><footer><p>&copy; ${new Date(now()).getUTCFullYear()} <a 
         }
       }
       let updatedCookies = [];
-      if (claims && claims.exp <= now() / 1000) {
+      if (claims && (claims.exp <= now() / 1000 || !(await active(cookies['__Host-access'], claims)))) {
         const refresh = unseal(cookies['__Host-refresh'] || '', settings.clientSecret, host);
         if (refresh && typeof refresh.token === 'string' && refresh.expires > now()) {
           const result = await tokenRequest(settings, { grant_type: 'refresh_token', refresh_token: refresh.token });
@@ -455,7 +469,7 @@ ${content}</main></div><footer><p>&copy; ${new Date(now()).getUTCFullYear()} <a 
         return startLogin(settings, host);
       }
       if (!authorized(claims)) {
-        return response(403, accessDenied(), null, [cookie('id', '', 0), cookie('refresh', '', 0)]);
+        return response(403, accessDenied(), null, [cookie('id', '', 0), cookie('access', '', 0), cookie('refresh', '', 0)]);
       }
       if (typeof claims.email !== 'string' || !claims.email) {
         console.error('Dashboard ID token is missing an email claim');

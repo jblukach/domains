@@ -114,16 +114,23 @@ The edge handler uses authorization code + PKCE, validates the Cognito ID
 token and nonce, checks its `cognito:groups` claim for `DashboardUsers`, and
 displays its email claim. Visitors see public Blog and GitHub tiles and can
 start sign-in from the upper-right link. Signed-in dashboard members also see
-an applications section. It stores the ID and encrypted refresh tokens in
-host-only, Secure, HttpOnly cookies and refreshes expired ID tokens for up to
-one day. Group changes take effect when a new ID token is issued; existing
+an applications section. It stores the ID, access, and encrypted refresh
+tokens in host-only, Secure, HttpOnly cookies and refreshes expired ID tokens
+for up to one day. Group changes take effect when a new ID token is issued; existing
 tokens can remain usable until they expire. Sign-out revokes the current
 refresh token through Cognito, clears the local cookies, and redirects to
 Cognito's logout endpoint. Sign-out requires a same-origin POST; the dashboard
 only sends referrers on same-origin requests. If revocation fails, sign-out
-reports an error and retains the session so it can be retried. Cognito also revokes associated
-tokens, but this dashboard validates ID tokens offline and cannot detect
-their revocation: a copied ID token can still be used until it expires.
+reports an error and retains the session so it can be retried. Cognito also
+revokes the associated tokens. Because ID tokens still verify offline after
+revocation, every request with an unexpired ID token also presents the
+session's access token to Cognito's `userInfo` endpoint and requires it to be
+accepted for the same `sub`. A revoked, missing, or mismatched access token
+falls back to the refresh token, which Cognito rejects for a revoked session,
+so a copied session stops working once it is revoked. If Cognito cannot be
+reached for this check, the dashboard returns 503 rather than trusting the
+token. Sessions created before this check lack the access cookie and are
+refreshed on their next request.
 The two hostnames have separate local sessions; signing out on one does not
 revoke the other's refresh token.
 Before deployment, Cognito must disable self-registration for `DashboardUsers`
@@ -153,7 +160,8 @@ after a successful load.
 
 The old GitHub redirect is removed rather than preserved. Browsers and
 intermediaries may retain the previous permanent 301; clear their caches if
-they continue redirecting. Before production, test login and refresh on both
+they continue redirecting. Before production, test login, refresh, and
+rejection of a copied session after sign-out on both
 hostnames, regional Cognito failover, access to the cross-account secret, and
 edge errors and logs. Synthesis and unit tests do not verify live AWS access.
 Run the local edge tests with `node --test dashboard/index.test.js`.

@@ -127,7 +127,9 @@ function fixture(claimOverrides = {}) {
   let challenge;
   let refreshes = 0;
   const revoked = [];
+  const activeAccess = new Set();
   let revokeFailure;
+  let userInfoFailure;
   let outage = false;
   let primaryJwksOutage = false;
   const jwksRequests = [];
@@ -149,7 +151,16 @@ function fixture(claimOverrides = {}) {
         assert.equal(options.headers['content-type'], 'application/x-www-form-urlencoded');
         revoked.push(new URLSearchParams(options.body).get('token'));
         if (revokeFailure === 'network') throw new Error('test outage');
-        return { status: revokeFailure || 200, body: null };
+        if (revokeFailure) return { status: revokeFailure, body: null };
+        activeAccess.clear();
+        return { status: 200, body: null };
+      }
+      if (url === 'https://auth.4n6ir.com/oauth2/userInfo') {
+        if (userInfoFailure) return { status: userInfoFailure, body: null };
+        const token = options.headers.authorization.replace(/^Bearer /, '');
+        return activeAccess.has(token)
+          ? { status: 200, body: { sub: 'user-1' } }
+          : { status: 401, body: { error: 'invalid_token' } };
       }
       assert.equal(url, 'https://auth.4n6ir.com/oauth2/token');
       const fields = new URLSearchParams(options.body);
@@ -158,15 +169,19 @@ function fixture(claimOverrides = {}) {
         assert.equal(crypto.createHash('sha256').update(fields.get('code_verifier')).digest('base64url'), challenge);
         assert.match(fields.get('redirect_uri'), /^https:\/\/(www\.)?4n6ir\.com\/callback$/);
       } else {
+        if (revoked.includes(fields.get('refresh_token'))) return { status: 400, body: { error: 'invalid_grant' } };
         assert.equal(fields.get('refresh_token'), `refresh-${refreshes}`);
         refreshes++;
       }
+      activeAccess.add(`access-${refreshes}`);
       const claims = {
-        iss: settings.issuer, aud: settings.clientId, token_use: 'id',
+        iss: settings.issuer, aud: settings.clientId, token_use: 'id', sub: 'user-1',
         iat: Math.floor(time / 1000), exp: Math.floor(time / 1000) + 900, nonce,
         email: 'customer@example.com', 'cognito:groups': ['DashboardUsers'], ...claimOverrides,
       };
-      return { status: 200, body: { id_token: signedToken(claims), refresh_token: `refresh-${refreshes}` } };
+      return { status: 200, body: {
+        id_token: signedToken(claims), access_token: `access-${refreshes}`, refresh_token: `refresh-${refreshes}`,
+      } };
     },
   });
   return {
@@ -176,6 +191,7 @@ function fixture(claimOverrides = {}) {
     primaryJwksOutage: () => { primaryJwksOutage = true; },
     setClaims: claims => { Object.assign(claimOverrides, claims); },
     failRevocation: failure => { revokeFailure = failure; },
+    failUserInfo: status => { userInfoFailure = status; },
     revoked,
     jwksRequests,
     prepare(start) {
@@ -262,10 +278,10 @@ test('requires DashboardUsers at sign-in and on every request, including refresh
   const f = fixture();
   const session = await f.login();
   const deniedToken = signedToken({
-    iss: settings.issuer, aud: settings.clientId, token_use: 'id',
+    iss: settings.issuer, aud: settings.clientId, token_use: 'id', sub: 'user-1',
     iat: 1700000000, exp: 1700000900, email: 'customer@example.com', 'cognito:groups': ['OtherUsers'],
   });
-  assert.equal((await f.handler(request('/', '4n6ir.com', [`__Host-id=${deniedToken}`]))).status, '403');
+  assert.equal((await f.handler(request('/', '4n6ir.com', [`__Host-id=${deniedToken}`, '__Host-access=access-0']))).status, '403');
   f.setClaims({ 'cognito:groups': ['OtherUsers'] });
   f.advance(901000);
   const denied = await f.handler(request('/', '4n6ir.com', session));
@@ -304,6 +320,7 @@ test('sign-out clears the local session and ends managed login on both hosts', a
     assert.equal(url.searchParams.get('client_id'), settings.clientId);
     assert.equal(url.searchParams.get('logout_uri'), `https://${host}/`);
     assert.ok(cookies(logout).includes('__Host-id='));
+    assert.ok(cookies(logout).includes('__Host-access='));
     assert.ok(cookies(logout).includes('__Host-refresh='));
     const page = await f.handler(request('/', host));
     assert.equal(page.status, '200');
@@ -389,13 +406,66 @@ test('refreshes expired tokens and respects the original session limit', async (
   const page = await f.handler(request('/', '4n6ir.com', session));
   assert.equal(page.status, '200');
   const rotated = cookies(page);
-  assert.equal(rotated.length, 2);
+  assert.equal(rotated.length, 3);
   f.advance(901000);
   assert.equal((await f.handler(request('/', '4n6ir.com', rotated))).status, '200');
   f.advance(86400000);
   const expired = await f.handler(request('/', '4n6ir.com', rotated));
   assert.equal(expired.status, '200');
   assert.match(expired.body, /<div class="topbar"><a href="\/login">Sign in<\/a><\/div>/);
+});
+
+test('rejects a copied session once sign-out has revoked it', async () => {
+  const f = fixture();
+  const session = await f.login();
+  assert.equal((await f.handler(request('/', '4n6ir.com', session))).status, '200');
+  assert.equal((await f.handler(request('/logout', '4n6ir.com', session))).status, '302');
+  const originalLog = console.error;
+  console.error = () => {};
+  try {
+    const replayed = await f.handler(request('/', '4n6ir.com', session));
+    assert.equal(replayed.status, '200');
+    assert.match(replayed.body, /<div class="topbar"><a href="\/login">Sign in<\/a><\/div>/);
+    assert.doesNotMatch(replayed.body, /customer@example\.com|<section class="applications"/);
+    assert.equal(replayed.headers['set-cookie'], undefined);
+    const missing = await f.handler(request('/missing', '4n6ir.com', session));
+    assert.equal(new URL(location(missing)).pathname, '/oauth2/authorize');
+  } finally {
+    console.error = originalLog;
+  }
+});
+
+test('requires a live access token for the same user and fails closed when the check is unavailable', async () => {
+  const f = fixture();
+  const session = await f.login();
+  const id = session.find(value => value.startsWith('__Host-id='));
+  const access = session.find(value => value.startsWith('__Host-access='));
+  const signedOut = /<div class="topbar"><a href="\/login">Sign in<\/a><\/div>/;
+  assert.match((await f.handler(request('/', '4n6ir.com', [id]))).body, signedOut);
+  assert.match((await f.handler(request('/', '4n6ir.com', [id, '__Host-access=unknown']))).body, signedOut);
+  const otherUser = signedToken({
+    iss: settings.issuer, aud: settings.clientId, token_use: 'id', sub: 'user-2',
+    iat: 1700000000, exp: 1700000900, email: 'other@example.com', 'cognito:groups': ['DashboardUsers'],
+  });
+  assert.match((await f.handler(request('/', '4n6ir.com', [`__Host-id=${otherUser}`, access]))).body, signedOut);
+  f.failUserInfo(500);
+  const originalLog = console.error;
+  console.error = () => {};
+  try {
+    assert.equal((await f.handler(request('/', '4n6ir.com', session))).status, '503');
+  } finally {
+    console.error = originalLog;
+  }
+});
+
+test('refreshes a session whose access token is missing or no longer accepted', async () => {
+  const f = fixture();
+  const session = await f.login();
+  const page = await f.handler(request('/', '4n6ir.com', session.filter(value => !value.startsWith('__Host-access='))));
+  assert.equal(page.status, '200');
+  assert.match(page.body, /customer@example\.com/);
+  assert.ok(cookies(page).includes('__Host-access=access-1'));
+  assert.equal((await f.handler(request('/', '4n6ir.com', cookies(page)))).status, '200');
 });
 
 test('rejects forged tokens and fails closed during a key service outage', async () => {
